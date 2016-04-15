@@ -26,13 +26,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.airlift.log.Logger;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
@@ -305,12 +305,20 @@ public class AccumuloSplit
     public static final class RangeSerializer
             extends JsonSerializer<Range>
     {
-        final DataOutputBuffer dout = new DataOutputBuffer();
+        private static final ThreadLocal<DataOutputBuffer> TL_OUT = new ThreadLocal<DataOutputBuffer>()
+        {
+            @Override
+            protected DataOutputBuffer initialValue()
+            {
+                return new DataOutputBuffer();
+            }
+        };
 
         @Override
         public void serialize(Range value, JsonGenerator jgen, SerializerProvider provider)
-                throws IOException, JsonProcessingException
+                throws IOException
         {
+            DataOutputBuffer dout = TL_OUT.get();
             dout.reset();
             value.write(dout);
             jgen.writeBinary(dout.getData(), 0, dout.getLength());
@@ -320,13 +328,32 @@ public class AccumuloSplit
     public static final class RangeDeserializer
             extends JsonDeserializer<Range>
     {
-        final DataOutputBuffer out = new DataOutputBuffer();
-        final DataInputBuffer buffer = new DataInputBuffer();
+        private static final Logger LOG = Logger.get(RangeDeserializer.class);
+        private static final ThreadLocal<DataOutputBuffer> TL_OUT = new ThreadLocal<DataOutputBuffer>()
+        {
+            @Override
+            protected DataOutputBuffer initialValue()
+            {
+                return new DataOutputBuffer();
+            }
+        };
+
+        private static final ThreadLocal<DataInputBuffer> TL_BUFFER = new ThreadLocal<DataInputBuffer>()
+        {
+            @Override
+            protected DataInputBuffer initialValue()
+            {
+                return new DataInputBuffer();
+            }
+        };
 
         @Override
         public Range deserialize(JsonParser jp, DeserializationContext ctxt)
-                throws IOException, JsonProcessingException
+                throws IOException
         {
+            DataOutputBuffer out = TL_OUT.get();
+            DataInputBuffer buffer = TL_BUFFER.get();
+
             out.reset();
             jp.readBinaryValue(out);
 

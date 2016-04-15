@@ -16,6 +16,7 @@
     <properties>
         <accumulo.version>1.6.2</accumulo.version>
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
+        <air.test.fork-mode>always</air.test.fork-mode>
         <curator.version>2.9.1</curator.version>
         <jackson.version>2.4.4</jackson.version>
         <junit.version>4.12</junit.version>

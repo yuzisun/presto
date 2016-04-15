@@ -201,8 +201,8 @@ public class Indexer
         table.getColumns().stream().forEach(col -> {
             if (col.isIndexed()) {
                 // Wrap the column family and qualifier for this column
-                ByteBuffer cf = ByteBuffer.wrap(col.getFamily().getBytes());
-                ByteBuffer cq = ByteBuffer.wrap(col.getQualifier().getBytes());
+                ByteBuffer cf = wrap(col.getFamily().getBytes());
+                ByteBuffer cq = wrap(col.getQualifier().getBytes());
 
                 // Get all qualifiers for this given column family, creating a new one if necessary
                 Set<ByteBuffer> qualifiers = indexColumns.get(cf);

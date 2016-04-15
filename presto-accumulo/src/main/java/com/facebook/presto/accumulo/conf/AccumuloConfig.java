@@ -17,7 +17,6 @@ package com.facebook.presto.accumulo.conf;
 
 import com.facebook.presto.accumulo.metadata.AccumuloMetadataManager;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import io.airlift.configuration.Config;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -28,6 +27,7 @@ import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 
+import static com.facebook.presto.spi.StandardErrorCode.USER_ERROR;
 import static java.lang.String.format;
 
 /**
@@ -194,7 +194,7 @@ public class AccumuloConfig
         catch (InstantiationException | IllegalAccessException | ClassNotFoundException
                 | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
                 | SecurityException e) {
-            throw new PrestoException(StandardErrorCode.USER_ERROR, e);
+            throw new PrestoException(USER_ERROR, e);
         }
     }
 

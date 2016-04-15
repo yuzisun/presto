@@ -35,7 +35,6 @@ import com.facebook.presto.spi.Constraint;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.SchemaTablePrefix;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.TableNotFoundException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -51,6 +50,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.facebook.presto.accumulo.Types.checkType;
+import static com.facebook.presto.spi.StandardErrorCode.USER_ERROR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
@@ -160,7 +160,7 @@ public class AccumuloMetadata
             SchemaTableName newTableName)
     {
         if (client.getTable(newTableName) != null) {
-            throw new PrestoException(StandardErrorCode.USER_ERROR,
+            throw new PrestoException(USER_ERROR,
                     "Table " + newTableName + " already exists");
         }
 

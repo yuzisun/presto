@@ -17,7 +17,6 @@ package com.facebook.presto.accumulo.serializers;
 
 import com.facebook.presto.accumulo.Types;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.type.Type;
 import io.airlift.slice.Slice;
@@ -33,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.DateType.DATE;
@@ -118,14 +118,14 @@ public class StringRowSerializer
     @Override
     public Block getArray(String name, Type type)
     {
-        throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+        throw new PrestoException(NOT_SUPPORTED,
                 "arrays are not (yet?) supported for StringRowSerializer");
     }
 
     @Override
     public void setArray(Text text, Type type, Block block)
     {
-        throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+        throw new PrestoException(NOT_SUPPORTED,
                 "arrays are not (yet?) supported for StringRowSerializer");
     }
 
@@ -192,14 +192,14 @@ public class StringRowSerializer
     @Override
     public Block getMap(String name, Type type)
     {
-        throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+        throw new PrestoException(NOT_SUPPORTED,
                 "maps are not (yet?) supported for StringRowSerializer");
     }
 
     @Override
     public void setMap(Text text, Type type, Block block)
     {
-        throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+        throw new PrestoException(NOT_SUPPORTED,
                 "maps are not (yet?) supported for StringRowSerializer");
     }
 
@@ -261,11 +261,11 @@ public class StringRowSerializer
     {
         Text t = new Text();
         if (Types.isArrayType(type)) {
-            throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+            throw new PrestoException(NOT_SUPPORTED,
                     "arrays are not (yet?) supported for StringRowSerializer");
         }
         else if (Types.isMapType(type)) {
-            throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+            throw new PrestoException(NOT_SUPPORTED,
                     "maps are not (yet?) supported for StringRowSerializer");
         }
         else if (type.equals(BIGINT) && v instanceof Integer) {
@@ -296,7 +296,7 @@ public class StringRowSerializer
             setVarchar(t, ((Slice) v).toStringUtf8());
         }
         else {
-            throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+            throw new PrestoException(NOT_SUPPORTED,
                     format("StringLexicoder is unable to encode type %s, object is %s", type, v));
         }
 
@@ -309,11 +309,11 @@ public class StringRowSerializer
     {
         String str = new String(v);
         if (Types.isArrayType(type)) {
-            throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+            throw new PrestoException(NOT_SUPPORTED,
                     "arrays are not (yet?) supported for StringRowSerializer");
         }
         else if (Types.isMapType(type)) {
-            throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+            throw new PrestoException(NOT_SUPPORTED,
                     "maps are not (yet?) supported for StringRowSerializer");
         }
         else if (type.equals(BIGINT)) {
@@ -341,7 +341,7 @@ public class StringRowSerializer
             return (T) new String(v);
         }
         else {
-            throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+            throw new PrestoException(NOT_SUPPORTED,
                     format("StringLexicoder is unable to encode type %s, object is %s", type, v));
         }
     }

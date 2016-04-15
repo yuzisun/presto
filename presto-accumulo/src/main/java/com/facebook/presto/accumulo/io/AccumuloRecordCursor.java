@@ -26,7 +26,6 @@ import com.facebook.presto.accumulo.model.AccumuloColumnHandle;
 import com.facebook.presto.accumulo.serializers.AccumuloRowSerializer;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.RecordCursor;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Marker.Bound;
@@ -52,6 +51,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.facebook.presto.spi.StandardErrorCode.INTERNAL_ERROR;
+import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.DateType.DATE;
@@ -279,7 +280,7 @@ public class AccumuloRecordCursor
             return true;
         }
         catch (IOException e) {
-            throw new PrestoException(StandardErrorCode.INTERNAL_ERROR, e);
+            throw new PrestoException(INTERNAL_ERROR, e);
         }
     }
 
@@ -344,7 +345,7 @@ public class AccumuloRecordCursor
             case StandardTypes.TIMESTAMP:
                 return serializer.getTimestamp(fieldToColumnName[field]).getTime();
             default:
-                throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+                throw new PrestoException(NOT_SUPPORTED,
                         "Unsupported type " + getType(field));
         }
     }
@@ -388,7 +389,7 @@ public class AccumuloRecordCursor
             return Slices.utf8Slice(serializer.getVarchar(fieldToColumnName[field]));
         }
         else {
-            throw new PrestoException(StandardErrorCode.NOT_SUPPORTED,
+            throw new PrestoException(NOT_SUPPORTED,
                     "Unsupported type " + type);
         }
     }

@@ -19,7 +19,6 @@ import com.facebook.presto.accumulo.serializers.AccumuloRowSerializer;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.HostAddress;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,6 +39,7 @@ import org.apache.hadoop.io.DataOutputBuffer;
 import java.io.IOException;
 import java.util.List;
 
+import static com.facebook.presto.spi.StandardErrorCode.USER_ERROR;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Objects.requireNonNull;
@@ -232,7 +232,7 @@ public class AccumuloSplit
             return (Class<? extends AccumuloRowSerializer>) Class.forName(serializerClassName);
         }
         catch (ClassNotFoundException e) {
-            throw new PrestoException(StandardErrorCode.USER_ERROR,
+            throw new PrestoException(USER_ERROR,
                     "Configured serializer class not found", e);
         }
     }

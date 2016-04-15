@@ -17,7 +17,6 @@ package com.facebook.presto.accumulo.serializers;
 
 import com.facebook.presto.accumulo.Types;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.type.Type;
 import io.airlift.slice.Slice;
@@ -42,6 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import static com.facebook.presto.spi.StandardErrorCode.INTERNAL_ERROR;
 import static com.facebook.presto.spi.type.BigintType.BIGINT;
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.DateType.DATE;
@@ -343,7 +343,7 @@ public class LexicoderRowSerializer
         else {
             Lexicoder l = lexicoderMap.get(type);
             if (l == null) {
-                throw new PrestoException(StandardErrorCode.INTERNAL_ERROR,
+                throw new PrestoException(INTERNAL_ERROR,
                         "No lexicoder for type " + type);
             }
             return l;

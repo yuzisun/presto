@@ -23,7 +23,6 @@ import com.facebook.presto.accumulo.model.AccumuloColumnHandle;
 import com.facebook.presto.accumulo.serializers.AccumuloRowSerializer;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.type.Type;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -65,6 +64,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
+import static com.facebook.presto.spi.StandardErrorCode.INTERNAL_ERROR;
+import static com.facebook.presto.spi.StandardErrorCode.USER_ERROR;
 import static java.nio.ByteBuffer.wrap;
 
 /**
@@ -224,7 +225,7 @@ public class Indexer
 
         // If there are no indexed columns, throw an exception
         if (indexColumns.size() == 0) {
-            throw new PrestoException(StandardErrorCode.USER_ERROR,
+            throw new PrestoException(USER_ERROR,
                     "No indexed columns in table metadata. Have you declared this table as indexed?");
         }
 
@@ -329,7 +330,7 @@ public class Indexer
             indexWrtr.addMutation(mIdx);
         }
         catch (MutationsRejectedException e) {
-            throw new PrestoException(StandardErrorCode.INTERNAL_ERROR,
+            throw new PrestoException(INTERNAL_ERROR,
                     "Invalid mutation added to index", e);
         }
 
@@ -373,7 +374,7 @@ public class Indexer
             metrics.put(METRICS_TABLE_ROW_ID, cfMap);
         }
         catch (MutationsRejectedException | TableNotFoundException e) {
-            throw new PrestoException(StandardErrorCode.INTERNAL_ERROR,
+            throw new PrestoException(INTERNAL_ERROR,
                     "Invalid mutation added to index metrics", e);
         }
     }
@@ -389,7 +390,7 @@ public class Indexer
             indexWrtr.close();
         }
         catch (MutationsRejectedException e) {
-            throw new PrestoException(StandardErrorCode.INTERNAL_ERROR, e);
+            throw new PrestoException(INTERNAL_ERROR, e);
         }
     }
 

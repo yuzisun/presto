@@ -26,7 +26,6 @@ import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.type.Type;
 import com.google.common.collect.ImmutableList;
 import io.airlift.log.Logger;
@@ -38,6 +37,7 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import java.util.List;
 
+import static com.facebook.presto.spi.StandardErrorCode.INTERNAL_ERROR;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -81,7 +81,7 @@ public class AccumuloRecordSet
             this.serializer = split.getSerializerClass().newInstance();
         }
         catch (Exception e) {
-            throw new PrestoException(StandardErrorCode.INTERNAL_ERROR,
+            throw new PrestoException(INTERNAL_ERROR,
                     "Failed to factory serializer class.  Is it on the classpath?", e);
         }
 
@@ -101,7 +101,7 @@ public class AccumuloRecordSet
             scan.setRanges(split.getRanges());
         }
         catch (Exception e) {
-            throw new PrestoException(StandardErrorCode.INTERNAL_ERROR, e);
+            throw new PrestoException(INTERNAL_ERROR, e);
         }
     }
 

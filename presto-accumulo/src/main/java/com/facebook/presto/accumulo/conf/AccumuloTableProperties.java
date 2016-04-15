@@ -19,7 +19,6 @@ import com.facebook.presto.accumulo.serializers.AccumuloRowSerializer;
 import com.facebook.presto.accumulo.serializers.LexicoderRowSerializer;
 import com.facebook.presto.accumulo.serializers.StringRowSerializer;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.session.PropertyMetadata;
 import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.collect.ImmutableList;
@@ -35,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.facebook.presto.spi.StandardErrorCode.USER_ERROR;
 import static com.facebook.presto.spi.session.PropertyMetadata.booleanSessionProperty;
 import static com.facebook.presto.spi.session.PropertyMetadata.stringSessionProperty;
 
@@ -186,7 +186,7 @@ public final class AccumuloTableProperties
             String[] locGroups = group.split(":");
 
             if (locGroups.length != 2) {
-                throw new PrestoException(StandardErrorCode.USER_ERROR,
+                throw new PrestoException(USER_ERROR,
                         "Locality groups string is malformed");
             }
 

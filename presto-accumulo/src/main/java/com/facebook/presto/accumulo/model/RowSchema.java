@@ -16,11 +16,12 @@
 package com.facebook.presto.accumulo.model;
 
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.spi.type.Type;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.facebook.presto.spi.StandardErrorCode.USER_ERROR;
 
 /**
  * Class to define the schema of a Row, stored as a list of {@link AccumuloColumnHandle}.
@@ -114,7 +115,7 @@ public class RowSchema
             }
         }
 
-        throw new PrestoException(StandardErrorCode.USER_ERROR, "No column with name " + name);
+        throw new PrestoException(USER_ERROR, "No column with name " + name);
     }
 
     /**

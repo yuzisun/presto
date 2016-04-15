@@ -21,7 +21,6 @@ import com.facebook.presto.accumulo.serializers.AccumuloRowSerializer;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,6 +30,8 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.facebook.presto.spi.StandardErrorCode.ALREADY_EXISTS;
+import static com.facebook.presto.spi.StandardErrorCode.USER_ERROR;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
@@ -207,7 +208,7 @@ public class AccumuloTable
             // Validate this column does not already exist
             for (AccumuloColumnHandle col : columns) {
                 if (col.getName().equals(newColumn.getName())) {
-                    throw new PrestoException(StandardErrorCode.ALREADY_EXISTS,
+                    throw new PrestoException(ALREADY_EXISTS,
                             "Column " + newColumn.getName() + " already exists in table");
                 }
             }
@@ -224,7 +225,7 @@ public class AccumuloTable
             for (AccumuloColumnHandle col : columns) {
                 // Validate this column does not already exist
                 if (col.getName().equals(newColumn.getName())) {
-                    throw new PrestoException(StandardErrorCode.ALREADY_EXISTS,
+                    throw new PrestoException(ALREADY_EXISTS,
                             "Column " + newColumn.getName() + " already exists in table");
                 }
 
@@ -329,7 +330,7 @@ public class AccumuloTable
             return (AccumuloRowSerializer) Class.forName(serializerClassName).newInstance();
         }
         catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new PrestoException(StandardErrorCode.USER_ERROR,
+            throw new PrestoException(USER_ERROR,
                     "Configured serializer class not found", e);
         }
     }

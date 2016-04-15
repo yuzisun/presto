@@ -23,7 +23,6 @@ import com.facebook.presto.accumulo.model.TabletSplitMetadata;
 import com.facebook.presto.accumulo.serializers.AccumuloRowSerializer;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.log.Logger;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -47,6 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import static com.facebook.presto.spi.StandardErrorCode.INTERNAL_ERROR;
 
 /**
  * Class to assist the Presto connector, and maybe external applications, leverage the secondary
@@ -283,7 +284,7 @@ public class IndexLookup
         long numRows = -1;
         for (Entry<Key, Value> entry : scan) {
             if (numRows > 0) {
-                throw new PrestoException(StandardErrorCode.INTERNAL_ERROR,
+                throw new PrestoException(INTERNAL_ERROR,
                         "Should have received only one entry");
             }
             numRows = Long.parseLong(entry.getValue().toString());

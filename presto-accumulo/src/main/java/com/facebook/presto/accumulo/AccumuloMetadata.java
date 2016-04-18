@@ -290,22 +290,6 @@ public class AccumuloMetadata
     }
 
     /**
-     * Rollback the insert, which is not supported by this connector
-     *
-     * @param session Current client session
-     * @param insertHandle Table handle
-     */
-    @Override
-    public void rollbackInsert(ConnectorSession session, ConnectorInsertTableHandle insertHandle)
-    {
-        // This super func is a no-op (may change in future versions)
-        // Not much we can really do here since all the inserts are elsewhere.
-        // Accumulo ain't no ACID
-        // TODO Can we do insert rollbacks somehow?
-        ConnectorMetadata.super.rollbackInsert(session, insertHandle);
-    }
-
-    /**
      * Gets an instance of a TableHandle based on the given name
      *
      * @param session Current client session

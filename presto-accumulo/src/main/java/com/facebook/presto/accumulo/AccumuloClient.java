@@ -121,7 +121,7 @@ public class AccumuloClient
         try {
             if (config.isMiniAccumuloCluster()) {
                 // Create MAC directory
-                final File macDir = Files.createTempDirectory("mac-").toFile();
+                File macDir = Files.createTempDirectory("mac-").toFile();
                 LOG.info("MAC is enabled, starting MiniAccumuloCluster at %s", macDir);
 
                 // Start MAC and connect to it
@@ -825,14 +825,14 @@ public class AccumuloClient
             LOG.info("Getting tablet splits for table %s", tableName);
 
             // Get the initial Range based on the row ID domain
-            final Collection<Range> rowIdRanges = getRangesFromDomain(rowIdDom, serializer);
-            final List<TabletSplitMetadata> tabletSplits = new ArrayList<>();
+            Collection<Range> rowIdRanges = getRangesFromDomain(rowIdDom, serializer);
+            List<TabletSplitMetadata> tabletSplits = new ArrayList<>();
 
             // Use the secondary index, if enabled
             if (AccumuloSessionProperties.isOptimizeIndexEnabled(session)) {
                 // Get the scan authorizations to query the index and create the index lookup
                 // utility
-                final Authorizations scanAuths = getScanAuthorizations(session, schema, table);
+                Authorizations scanAuths = getScanAuthorizations(session, schema, table);
                 IndexLookup sIndexLookup = new IndexLookup(conn, conf, scanAuths);
 
                 // Check the secondary index based on the column constraints
@@ -847,7 +847,7 @@ public class AccumuloClient
             // we will just use the Range from the row ID domain
 
             // Split the ranges on tablet boundaries, if enabled
-            final Collection<Range> splitRanges;
+            Collection<Range> splitRanges;
             if (AccumuloSessionProperties.isOptimizeSplitRangesEnabled(session)) {
                 splitRanges = splitByTabletBoundaries(tableName, rowIdRanges);
             }
@@ -1113,7 +1113,7 @@ public class AccumuloClient
             AccumuloRowSerializer serializer)
             throws AccumuloException, AccumuloSecurityException, TableNotFoundException
     {
-        final Range aRange;
+        Range aRange;
         if (pRange.isAll()) {
             aRange = new Range();
         }

@@ -727,12 +727,9 @@ public class AccumuloClient
             table.setRowId(target);
         }
 
-        boolean found = false;
         // Locate the column to rename
         for (AccumuloColumnHandle col : table.getColumns()) {
             if (col.getName().equalsIgnoreCase(source)) {
-                found = true;
-
                 // Rename the column
                 col.setName(target);
 
@@ -740,14 +737,12 @@ public class AccumuloClient
                 metaManager.deleteTableMetadata(
                         new SchemaTableName(table.getSchema(), table.getTable()));
                 metaManager.createTableMetadata(table);
-                break;
+                return;
             }
         }
 
-        if (!found) {
-            throw new PrestoException(USER_ERROR,
-                    format("Failed to find source column %s to rename to %s", source, target));
-        }
+        throw new PrestoException(USER_ERROR,
+                format("Failed to find source column %s to rename to %s", source, target));
     }
 
     /**

@@ -669,25 +669,35 @@ public class AccumuloClient
     }
 
     /**
-     * Creates a new view with the given name and data.  Replaces a view if 'replace' is true.
+     * Creates a new view with the given name and data.
      *
      * @param viewName Name of the view
      * @param viewData Data for the view
-     * @param replace True to replace, false otherwise
      */
-    public void createView(SchemaTableName viewName, String viewData, boolean replace)
+    public void createView(SchemaTableName viewName, String viewData)
     {
-        if (!replace && this.getSchemaNames().contains(viewName.getSchemaName())) {
-            if (this.getViewNames(viewName.getSchemaName()).contains(viewName.getTableName())) {
+        if (getSchemaNames().contains(viewName.getSchemaName())) {
+            if (getViewNames(viewName.getSchemaName()).contains(viewName.getTableName())) {
                 throw new PrestoException(ALREADY_EXISTS, "View already exists");
             }
 
-            if (this.getTableNames(viewName.getSchemaName()).contains(viewName.getTableName())) {
+            if (getTableNames(viewName.getSchemaName()).contains(viewName.getTableName())) {
                 throw new PrestoException(ALREADY_EXISTS, "View already exists as data table");
             }
         }
 
-        if (replace && getView(viewName) != null) {
+        metaManager.createViewMetadata(new AccumuloView(viewName.getSchemaName(), viewName.getTableName(), viewData));
+    }
+
+    /**
+     * Creates a new view with the given name and data.  Replaces a view if 'replace' is true.
+     *
+     * @param viewName Name of the view
+     * @param viewData Data for the view
+     */
+    public void createOrReplaceView(SchemaTableName viewName, String viewData)
+    {
+        if (getView(viewName) != null) {
             metaManager.deleteViewMetadata(viewName);
         }
 

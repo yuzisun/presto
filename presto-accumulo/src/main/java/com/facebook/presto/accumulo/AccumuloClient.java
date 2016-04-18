@@ -72,7 +72,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.facebook.presto.spi.StandardErrorCode.ALREADY_EXISTS;
@@ -524,7 +523,7 @@ public class AccumuloClient
             boolean tryAgain = false;
             do {
                 String fam = null;
-                String qual = UUID.randomUUID().toString().substring(0, 4);
+                String qual = getRandomColumnName();
 
                 // search through locality groups to find if this column has a locality group
                 if (groups != null) {
@@ -537,7 +536,7 @@ public class AccumuloClient
 
                 // randomly generate column family if not found
                 if (fam == null) {
-                    fam = UUID.randomUUID().toString().substring(0, 4);
+                    fam = getRandomColumnName();
                 }
 
                 // sanity check for qualifier uniqueness... but, I mean, what are the odds?
@@ -555,6 +554,16 @@ public class AccumuloClient
             while (tryAgain);
         }
         return mapping;
+    }
+
+    /**
+     * Gets a random four-character hexidecimal number as a String to be used by the column name generator
+     *
+     * @return Random column name
+     */
+    private String getRandomColumnName()
+    {
+        return format("%04x", random.nextInt(Short.MAX_VALUE));
     }
 
     /**

@@ -314,9 +314,8 @@ public class AccumuloMetadata
                     table.getRowId(), table.isExternal(), table.getSerializerClassName(),
                     table.getScanAuthorizations());
         }
-        else {
-            return null;
-        }
+
+        return null;
     }
 
     /**

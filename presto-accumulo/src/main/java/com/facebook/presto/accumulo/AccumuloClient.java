@@ -723,14 +723,14 @@ public class AccumuloClient
      */
     public void renameColumn(AccumuloTable table, String source, String target)
     {
-        if (table.getRowId().equals(source)) {
+        if (table.getRowId().equalsIgnoreCase(source)) {
             table.setRowId(target);
         }
 
         boolean found = false;
         // Locate the column to rename
         for (AccumuloColumnHandle col : table.getColumns()) {
-            if (col.getName().equals(source)) {
+            if (col.getName().equalsIgnoreCase(source)) {
                 found = true;
 
                 // Rename the column

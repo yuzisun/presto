@@ -1029,6 +1029,9 @@ public class AccumuloClient
             return location != null ? location : getDefaultTabletLocation(table);
         }
         catch (Exception e) {
+            // Swallow this exception so the query does not fail due to being unable
+            // to locate the tablet server for the provided Key.
+            // This is purely an optimization, but we will want to log the error.
             LOG.error("Failed to get tablet location, returning dummy location", e);
             e.printStackTrace();
             return DUMMY_LOCATION;
@@ -1069,6 +1072,9 @@ public class AccumuloClient
             return location;
         }
         catch (Exception e) {
+            // Swallow this exception so the query does not fail due to being unable
+            // to locate the tablet server for the default tablet.
+            // This is purely an optimization, but we will want to log the error.
             LOG.error("Failed to get tablet location, returning dummy location", e);
             e.printStackTrace();
             return DUMMY_LOCATION;

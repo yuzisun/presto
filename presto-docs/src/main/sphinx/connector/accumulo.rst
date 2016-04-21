@@ -27,7 +27,7 @@ Table of Contents
 #. `Unsupported Features <#unsupported-features>`__
 #. `Usage <#usage>`__
 #. `Indexing Columns <#indexing-columns>`__
-#. `Loading Data <#loadingdata>`__
+#. `Loading Data <#loading-data>`__
 #. `External Tables <#external-tables>`__
 #. `Table Properties <#table-properties>`__
 #. `Session Properties <#session-properties>`__

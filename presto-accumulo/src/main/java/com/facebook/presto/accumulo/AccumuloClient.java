@@ -216,7 +216,12 @@ public class AccumuloClient
     {
         validateColumns(meta);
         validateLocalityGroups(meta);
-        validateExternalTable(meta);
+        if (AccumuloTableProperties.isExternal(meta.getProperties())) {
+            validateExternalTable(meta);
+        }
+        else {
+            validateInternalTable(meta);
+        }
     }
 
     /**
@@ -308,11 +313,6 @@ public class AccumuloClient
      */
     private void validateExternalTable(ConnectorTableMetadata meta)
     {
-        // Validate the Accumulo table exists if it is external
-        if (!AccumuloTableProperties.isExternal(meta.getProperties())) {
-            return;
-        }
-
         String table = AccumuloTable.getFullTableName(meta.getTable());
         String indexTable = Indexer.getIndexTableName(meta.getTable());
         String metricsTable = Indexer.getMetricsTableName(meta.getTable());
@@ -335,6 +335,29 @@ public class AccumuloClient
         catch (Exception e) {
             throw new PrestoException(INTERNAL_ERROR,
                     "Accumulo error when validating external tables", e);
+        }
+    }
+
+    /**
+     * Validates the Accumulo table (and index tables, if applicable) do not already exist, if internal
+     *
+     * @param meta Table metadata
+     */
+    private void validateInternalTable(ConnectorTableMetadata meta)
+    {
+        String table = AccumuloTable.getFullTableName(meta.getTable());
+        String indexTable = Indexer.getIndexTableName(meta.getTable());
+        String metricsTable = Indexer.getMetricsTableName(meta.getTable());
+        if (conn.tableOperations().exists(table)) {
+            throw new PrestoException(ACCUMULO_TABLE_EXISTS,
+                    "Cannot create internal table when an Accumulo table already exists");
+        }
+
+        if (AccumuloTableProperties.getIndexColumns(meta.getProperties()).size() > 0) {
+            if (conn.tableOperations().exists(indexTable) || conn.tableOperations().exists(metricsTable)) {
+                throw new PrestoException(ACCUMULO_TABLE_EXISTS,
+                        "Internal table is indexed, but the index table and/or index metrics table(s) already exist");
+            }
         }
     }
 

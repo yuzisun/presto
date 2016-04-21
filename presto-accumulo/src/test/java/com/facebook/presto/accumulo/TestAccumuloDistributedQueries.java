@@ -233,7 +233,8 @@ public class TestAccumuloDistributedQueries
             throws Exception
     {
         // Override because base class error: Must have at least one non-row ID column
-        assertUpdate("CREATE TABLE test_rename_column AS SELECT 123 x, 456 a", 1);
+        // Casting to BIGINT -- mvn test: integers... intellij: longs?  weird
+        assertUpdate("CREATE TABLE test_rename_column AS SELECT CAST(123 AS BIGINT) x, 456 a", 1);
 
         assertUpdate("ALTER TABLE test_rename_column RENAME COLUMN x TO y");
         MaterializedResult materializedRows = computeActual("SELECT y FROM test_rename_column");
@@ -252,7 +253,8 @@ public class TestAccumuloDistributedQueries
             throws Exception
     {
         // Override because base class error: Must have at least one non-row ID column
-        assertUpdate("CREATE TABLE test_rename AS SELECT 123 x, 456 a", 1);
+        // Casting to BIGINT -- mvn test: integers... intellij: longs?  weird
+        assertUpdate("CREATE TABLE test_rename AS SELECT CAST(123 AS BIGINT) x, 456 a", 1);
 
         assertUpdate("ALTER TABLE test_rename RENAME TO test_rename_new");
         MaterializedResult materializedRows = computeActual("SELECT x FROM test_rename_new");

@@ -1093,7 +1093,7 @@ public class AccumuloClient
             }
 
             scan.close();
-            return location;
+            return location != null ? location : DUMMY_LOCATION;
         }
         catch (Exception e) {
             // Swallow this exception so the query does not fail due to being unable

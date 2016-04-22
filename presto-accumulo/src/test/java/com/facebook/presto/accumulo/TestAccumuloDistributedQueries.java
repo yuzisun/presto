@@ -70,16 +70,35 @@ public class TestAccumuloDistributedQueries
         assertUpdate("CREATE TABLE test_table_1 AS SELECT 'abcdefg' a, 1 b", 1);
         assertUpdate("CREATE VIEW test_view_1 AS SELECT a FROM test_table_1");
 
-        assertQuery("SELECT * FROM test_view_1", "VALUES 'abcdefg'");
+        assertQuery("SELECT a FROM test_view_1", "VALUES 'abcdefg'");
 
         // replace table with a version that's implicitly coercible to the previous one
         assertUpdate("DROP TABLE test_table_1");
         assertUpdate("CREATE TABLE test_table_1 AS SELECT 'abc' a, 1 b", 1);
 
-        assertQuery("SELECT * FROM test_view_1", "VALUES 'abc'");
+        assertQuery("SELECT a FROM test_view_1", "VALUES 'abc'");
 
         assertUpdate("DROP VIEW test_view_1");
         assertUpdate("DROP TABLE test_table_1");
+    }
+
+    @Override
+    public void testCompatibleTypeChangeForView2()
+            throws Exception
+    {
+        assertUpdate("CREATE TABLE test_table_2 AS SELECT BIGINT '1' v, 2 w", 1);
+        assertUpdate("CREATE VIEW test_view_2 AS SELECT * FROM test_table_2");
+
+        assertQuery("SELECT v FROM test_view_2", "VALUES 1");
+
+        // replace table with a version that's implicitly coercible to the previous one
+        assertUpdate("DROP TABLE test_table_2");
+        assertUpdate("CREATE TABLE test_table_2 AS SELECT INTEGER '1' v, 2 w", 1);
+
+        assertQuery("SELECT v FROM test_view_2 WHERE v = 1", "VALUES 1");
+
+        assertUpdate("DROP VIEW test_view_2");
+        assertUpdate("DROP TABLE test_table_2");
     }
 
     @Override

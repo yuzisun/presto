@@ -182,7 +182,7 @@ public class ZooKeeperMetadataManager
         }
         else {
             throw new PrestoException(ZOOKEEPER_ERROR,
-                    "No metadata for schema" + schema);
+                    "No metadata for schema " + schema);
         }
     }
 

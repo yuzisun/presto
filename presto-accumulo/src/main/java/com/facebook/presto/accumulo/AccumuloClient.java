@@ -604,7 +604,7 @@ public class AccumuloClient
     }
 
     /**
-     * Drops the table metadata from Presto as well as the Accumulo tables
+     * Drops the table metadata from Presto and Accumulo tables if internal table
      *
      * @param table The Accumulo table
      */
@@ -616,12 +616,14 @@ public class AccumuloClient
         // Remove the table metadata from Presto
         metaManager.deleteTableMetadata(stName);
 
-        // delete the table and index tables
-        tableManager.deleteAccumuloTable(tableName);
+        if (!table.isExternal()) {
+            // delete the table and index tables
+            tableManager.deleteAccumuloTable(tableName);
 
-        if (table.isIndexed()) {
-            tableManager.deleteAccumuloTable(Indexer.getIndexTableName(stName));
-            tableManager.deleteAccumuloTable(Indexer.getMetricsTableName(stName));
+            if (table.isIndexed()) {
+                tableManager.deleteAccumuloTable(Indexer.getIndexTableName(stName));
+                tableManager.deleteAccumuloTable(Indexer.getMetricsTableName(stName));
+            }
         }
     }
 

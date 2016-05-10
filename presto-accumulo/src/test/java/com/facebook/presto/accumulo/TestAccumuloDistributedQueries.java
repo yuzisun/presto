@@ -24,11 +24,8 @@ import org.intellij.lang.annotations.Language;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
-import java.util.List;
-
 import static com.facebook.presto.accumulo.AccumuloQueryRunner.createAccumuloQueryRunner;
 import static com.facebook.presto.accumulo.AccumuloQueryRunner.dropTpchTables;
-import static com.facebook.presto.util.ImmutableCollectors.toImmutableList;
 import static com.google.common.collect.Iterables.getOnlyElement;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -479,17 +476,6 @@ public class TestAccumuloDistributedQueries
         assertEquals("integer", actual.getMaterializedRows().get(7).getField(1));
         assertEquals("comment", actual.getMaterializedRows().get(8).getField(0));
         assertEquals("varchar", actual.getMaterializedRows().get(8).getField(1));
-    }
-
-    // Copied from abstract base class
-    private void assertTableColumnNames(String tableName, String... columnNames)
-    {
-        MaterializedResult result = computeActual("DESCRIBE " + tableName);
-        List<String> expected = ImmutableList.copyOf(columnNames);
-        List<String> actual = result.getMaterializedRows().stream()
-                .map(row -> (String) row.getField(0))
-                .collect(toImmutableList());
-        assertEquals(actual, expected);
     }
 
     // Copied from abstract base class

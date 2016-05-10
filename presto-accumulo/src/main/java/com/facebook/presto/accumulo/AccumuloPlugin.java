@@ -47,7 +47,7 @@ public class AccumuloPlugin
     @Inject
     public synchronized void setTypeManager(TypeManager typeManager)
     {
-        this.typeManager = typeManager;
+        this.typeManager = requireNonNull(typeManager, "typeManager is null");
     }
 
     public synchronized Map<String, String> getOptionalConfig()

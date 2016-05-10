@@ -99,9 +99,11 @@ public class AccumuloRecordCursor
     {
         this.cHandles = requireNonNull(cHandles, "cHandles is null");
         this.scan = requireNonNull(scan, "scan is null");
-
         this.serializer = requireNonNull(serializer, "serializer is null");
-        this.serializer.setRowIdName(rowIdName);
+        this.serializer.setRowIdName(requireNonNull(rowIdName, "rowIdName is null"));
+
+        requireNonNull(cHandles, "cHandles is null");
+        requireNonNull(constraints, "constraints is null");
 
         // If there are no columns, or the only column is the row ID, then
         // configure a scan iterator to only return the row IDs

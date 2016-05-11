@@ -291,6 +291,6 @@ public class AccumuloPageSink
     @Override
     public void abort()
     {
-        // TODO Auto-generated method stub
+        finish();
     }
 }

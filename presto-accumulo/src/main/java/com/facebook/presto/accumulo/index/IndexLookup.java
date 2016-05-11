@@ -36,11 +36,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -441,11 +439,6 @@ public class IndexLookup
     private static boolean inRange(Text t, Collection<Range> ranges)
     {
         Key kCq = new Key(t);
-        for (Range r : ranges) {
-            if (!r.beforeStartKey(kCq) && !r.afterEndKey(kCq)) {
-                return true;
-            }
-        }
-        return false;
+        return ranges.stream().anyMatch(r -> !r.beforeStartKey(kCq) && !r.afterEndKey(kCq));
     }
 }

@@ -414,13 +414,13 @@ public class AccumuloRecordCursor
     private void checkFieldType(int field, Type... expected)
     {
         Type actual = getType(field);
-
-        boolean equivalent = false;
         for (Type t : expected) {
-            equivalent |= actual.equals(t);
+            if (actual.equals(t)) {
+                return;
+            }
         }
 
-        checkArgument(equivalent, "Expected field %s to be a type of %s but is %s", field,
+        checkArgument(false, "Expected field %s to be a type of %s but is %s", field,
                 StringUtils.join(expected, ","), actual);
     }
 

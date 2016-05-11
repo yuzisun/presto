@@ -105,13 +105,7 @@ public class AccumuloRecordCursor
         requireNonNull(cHandles, "cHandles is null");
         requireNonNull(constraints, "constraints is null");
 
-        // If there are no columns, or the only column is the row ID, then
-        // configure a scan iterator to only return the row IDs
-        if (cHandles.size() == 0
-                || (cHandles.size() == 1 && cHandles.get(0).getName().equals(rowIdName))) {
-            // This can occur in cases such as SELECT COUNT(*) -- Presto doesn't need the entire
-            // contents of the row to count them, so we can configure Accumulo to only give us the
-            // first key/value pair in the row
+        if (retrieveOnlyRowIds(rowIdName)) {
             this.scan.addScanIterator(
                     new IteratorSetting(1, "firstentryiter", FirstEntryInRowIterator.class));
 
@@ -402,6 +396,21 @@ public class AccumuloRecordCursor
     {
         scan.close();
         nanoEnd = System.nanoTime();
+    }
+
+    /**
+     * Gets a Boolean value indicating whether or not the scanner should only return row IDs
+     * <p>
+     * This can occur in cases such as SELECT COUNT(*) or the table only has one column.
+     * Presto doesn't need the entire contents of the row to count them,
+     * so we can configure Accumulo to only give us the first key/value pair in the row
+     *
+     * @param rowIdName Row ID column name
+     * @return True if scanner should retriev eonly row IDs, false otherwise
+     */
+    private boolean retrieveOnlyRowIds(String rowIdName)
+    {
+        return cHandles.size() == 0 || (cHandles.size() == 1 && cHandles.get(0).getName().equals(rowIdName));
     }
 
     /**

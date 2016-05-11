@@ -245,9 +245,9 @@ public class AccumuloRecordCursor
                 serializer.deserialize(prevKV);
             }
 
-            // While there are key/value pairs to read and we don't break out of the loop
-            boolean braek = false;
-            while (iterator.hasNext() && !braek) {
+            // While there are key/value pairs to read and we have not advanced to a new row
+            boolean advancedToNewRow = false;
+            while (iterator.hasNext() && !advancedToNewRow) {
                 // Scan the key value pair and get the row ID
                 Entry<Key, Value> kv = iterator.next();
 
@@ -262,7 +262,7 @@ public class AccumuloRecordCursor
                 else {
                     // If they are different, then we have advanced to a new row and we need to
                     // break out of the loop
-                    braek = true;
+                    advancedToNewRow = true;
                 }
 
                 // Set our 'previous' member variables to track the previously scanned entry
@@ -273,7 +273,7 @@ public class AccumuloRecordCursor
             // If we didn't break out of the loop, we have reached the last entry in our
             // BatchScanner, so we set this to null as the entire row has been processed
             // This tracks the edge case where it is one entry per row ID
-            if (!braek) {
+            if (!advancedToNewRow) {
                 prevKV = null;
             }
 

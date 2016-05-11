@@ -240,6 +240,7 @@ public final class AccumuloTableProperties
         return (String) tableProperties.get(SERIALIZER);
     }
 
+
     /**
      * Gets a Boolean value indicating whether or not this table is external and Presto should only
      * manage metadata

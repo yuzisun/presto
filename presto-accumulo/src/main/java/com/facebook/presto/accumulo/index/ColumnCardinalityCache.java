@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import io.airlift.log.Logger;
+import io.airlift.units.Duration;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -59,7 +60,7 @@ public class ColumnCardinalityCache
     private static final Logger LOG = Logger.get(ColumnCardinalityCache.class);
     private final Connector conn;
     private final int size;
-    private final int expireSeconds;
+    private final Duration expireDuration;
 
     private Map<String, TableColumnCache> tableToCache = new HashMap<>();
 
@@ -74,7 +75,7 @@ public class ColumnCardinalityCache
     {
         this.conn = requireNonNull(conn, "conn is null");
         this.size = requireNonNull(config, "config is null").getCardinalityCacheSize();
-        this.expireSeconds = config.getCardinalityCacheExpireSeconds();
+        this.expireDuration = config.getCardinalityCacheExpiration();
         this.auths = requireNonNull(auths, "auths is null");
     }
 
@@ -283,9 +284,9 @@ public class ColumnCardinalityCache
                 String qualifier)
         {
             LOG.debug("Created new cache for %s.%s, column %s:%s, size %d expiry %d", schema, table,
-                    family, qualifier, size, expireSeconds);
+                    family, qualifier, size, expireDuration);
             return CacheBuilder.newBuilder().maximumSize(size)
-                    .expireAfterWrite(expireSeconds, TimeUnit.SECONDS)
+                    .expireAfterWrite(expireDuration.toMillis(), TimeUnit.MILLISECONDS)
                     .build(new CardinalityCacheLoader(schema, table, family, qualifier));
         }
     }

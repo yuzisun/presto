@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.facebook.presto.accumulo.AccumuloErrorCode.COLUMN_NOT_FOUND;
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.lang.String.format;
 
 /**
@@ -96,6 +97,7 @@ public class RowSchema
      */
     public AccumuloColumnHandle getColumn(int i)
     {
+        checkArgument(i > 0 && i < columns.size(), "column index must be non-zero and less than length");
         return columns.get(i);
     }
 

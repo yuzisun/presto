@@ -218,9 +218,20 @@ public class IndexLookup
             Collection<Range> rowIdRanges, List<TabletSplitMetadata> tabletSplits)
             throws Exception
     {
+        String metricsTable = Indexer.getMetricsTableName(schema, table);
+        long numRows = getNumRowsInTable(metricsTable);
+
         // Get the cardinalities from the metrics table
-        Multimap<Long, AccumuloColumnConstraint> cardinalities =
-                ccCache.getCardinalities(schema, table, constraintRanges);
+        Multimap<Long, AccumuloColumnConstraint> cardinalities;
+        if (AccumuloSessionProperties.isIndexShortCircuitEnabled(session)) {
+            cardinalities = ccCache.getCardinalities(schema, table, constraintRanges,
+                    (long) (numRows * AccumuloSessionProperties.getIndexSmallCardThreshold(session)));
+        }
+        else {
+            // disable short circuit using 0
+            cardinalities = ccCache.getCardinalities(schema, table, constraintRanges, 0);
+        }
+
         Optional<Entry<Long, AccumuloColumnConstraint>> entryOptional = cardinalities.entries().stream().findFirst();
         if (!entryOptional.isPresent()) {
             return false;
@@ -235,8 +246,6 @@ public class IndexLookup
         }
 
         String indexTable = Indexer.getIndexTableName(schema, table);
-        String metricsTable = Indexer.getMetricsTableName(schema, table);
-        long numRows = getNumRowsInTable(metricsTable);
         double threshold = AccumuloSessionProperties.getIndexThreshold(session);
         List<Range> idxRanges;
 

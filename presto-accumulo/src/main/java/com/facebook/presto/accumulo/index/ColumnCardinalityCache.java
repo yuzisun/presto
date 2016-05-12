@@ -13,36 +13,47 @@
  */
 package com.facebook.presto.accumulo.index;
 
+import com.facebook.presto.accumulo.AccumuloErrorCode;
 import com.facebook.presto.accumulo.conf.AccumuloConfig;
 import com.facebook.presto.accumulo.metadata.AccumuloTable;
 import com.facebook.presto.accumulo.model.AccumuloColumnConstraint;
+import com.facebook.presto.spi.PrestoException;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.MultimapBuilder;
+import com.google.common.util.concurrent.MoreExecutors;
 import io.airlift.log.Logger;
 import io.airlift.units.Duration;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.Text;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -61,7 +72,7 @@ public class ColumnCardinalityCache
     private final Connector conn;
     private final int size;
     private final Duration expireDuration;
-
+    private final ExecutorService executorService;
     private Map<String, TableColumnCache> tableToCache = new HashMap<>();
 
     /**
@@ -77,6 +88,15 @@ public class ColumnCardinalityCache
         this.size = requireNonNull(config, "config is null").getCardinalityCacheSize();
         this.expireDuration = config.getCardinalityCacheExpiration();
         this.auths = requireNonNull(auths, "auths is null");
+
+        // Create executor service with one hot thread, pool size capped at 4x processors,
+        // one minute keep alive, and a labeled ThreadFactory
+        AtomicLong threadCount = new AtomicLong(0);
+        this.executorService = MoreExecutors.getExitingExecutorService(
+                new ThreadPoolExecutor(1, 4 * Runtime.getRuntime().availableProcessors(), 60L,
+                        TimeUnit.SECONDS, new SynchronousQueue<>(), runnable ->
+                        new Thread(runnable, "cardinality-lookup-thread-" + threadCount.getAndIncrement())
+                ));
     }
 
     /**
@@ -102,6 +122,7 @@ public class ColumnCardinalityCache
      * @param schema Schema name
      * @param table Table name
      * @param idxConstraintRangePairs Mapping of all ranges for a given constraint
+     * @param earlyReturnThreshold Smallest acceptable cardinality to return early while other tasks complete
      * @return An immutable multimap of cardinality to column constraint, sorted by cardinality from smallest to largest
      * @throws AccumuloException If an error occurs retrieving the cardinalities from Accumulo
      * @throws AccumuloSecurityException If a security exception is raised
@@ -109,21 +130,39 @@ public class ColumnCardinalityCache
      * @throws ExecutionException If another error occurs; I really don't even know anymore.
      */
     public Multimap<Long, AccumuloColumnConstraint> getCardinalities(String schema, String table,
-            Multimap<AccumuloColumnConstraint, Range> idxConstraintRangePairs)
+            Multimap<AccumuloColumnConstraint, Range> idxConstraintRangePairs, long earlyReturnThreshold)
             throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
             ExecutionException
     {
-        // Create a multi map sorted by cardinality, sort columns by name
-        TreeMultimap<Long, AccumuloColumnConstraint> cardinalityToConstraints =
-                TreeMultimap.create(Long::compare,
-                        (AccumuloColumnConstraint o1, AccumuloColumnConstraint o2) -> o1.getName().compareTo(o2.getName()));
+        // Submit tasks to the executor to fetch column cardinality, adding it to the Guava cache if necessary
+        CompletionService<Pair<Long, AccumuloColumnConstraint>> executor = new ExecutorCompletionService<>(executorService);
+        idxConstraintRangePairs.asMap().entrySet().stream().forEach(e ->
+                executor.submit(() -> {
+                            long cardinality = getColumnCardinality(schema, table, e.getKey(), e.getValue());
+                            LOG.info("Cardinality for column %s is %d", e.getKey().getName(), cardinality);
+                            return Pair.of(cardinality, e.getKey());
+                        }
+                ));
 
-        for (Entry<AccumuloColumnConstraint, Collection<Range>> e : idxConstraintRangePairs.asMap().entrySet()) {
-            long card = getColumnCardinality(schema, table, e.getKey(), e.getValue());
-            LOG.debug("Cardinality for column %s is %s", e.getKey().getName(), card);
-            cardinalityToConstraints.put(card, e.getKey());
+        // Create a multi map sorted by cardinality
+        ListMultimap<Long, AccumuloColumnConstraint> cardinalityToConstraints = MultimapBuilder.treeKeys().arrayListValues().build();
+        try {
+            int numTasks = idxConstraintRangePairs.asMap().entrySet().size();
+            for (int i = 0; i < numTasks; ++i) {
+                Pair<Long, AccumuloColumnConstraint> columnCardinality = executor.take().get();
+                cardinalityToConstraints.put(columnCardinality.getLeft(), columnCardinality.getRight());
+                if (columnCardinality.getLeft() <= earlyReturnThreshold) {
+                    LOG.info("Cardinality %d, is below threshold. Returning early while other tasks finish",
+                            columnCardinality);
+                    break;
+                }
+            }
+        }
+        catch (ExecutionException | InterruptedException e) {
+            throw new PrestoException(AccumuloErrorCode.INTERNAL_ERROR, "Exception when getting cardinality", e);
         }
 
+        // Create a copy of the cardinalities
         return ImmutableMultimap.copyOf(cardinalityToConstraints);
     }
 
@@ -217,6 +256,7 @@ public class ColumnCardinalityCache
                 Collection<Range> colValues)
                 throws ExecutionException, TableNotFoundException
         {
+            LOG.debug("Getting cardinality for %s %s %s %s", column, family, qualifier, colValues);
             // Get the column cache for this column, creating a new one if necessary
             LoadingCache<Range, Long> cache = columnToCache.get(column);
             if (cache == null) {
@@ -328,21 +368,26 @@ public class ColumnCardinalityCache
         public Long load(Range key)
                 throws Exception
         {
-            // Create a BatchScanner against our metrics table, setting the value range and fetching
-            // the appropriate column
-            BatchScanner bScanner = conn.createBatchScanner(metricsTable, auths, 10);
-            bScanner.setRanges(ImmutableList.of(key));
-            bScanner.fetchColumn(columnFamily, Indexer.CARDINALITY_CQ_AS_TEXT);
+            LOG.debug("Loading a non-exact range from Accumulo: %s", key);
+            // Create batch scanner for querying all ranges
+            Scanner bScanner = conn.createScanner(metricsTable, auths);
+            try {
+                bScanner.setRange(key);
+                bScanner.fetchColumn(columnFamily, Indexer.CARDINALITY_CQ_AS_TEXT);
 
-            // Sum all those entries!
-            long numEntries = 0;
-            for (Entry<Key, Value> entry : bScanner) {
-                numEntries += Long.parseLong(entry.getValue().toString());
+                // Sum the entries to get the cardinality
+                long numEntries = 0;
+                for (Entry<Key, Value> entry : bScanner) {
+                    numEntries += Long.parseLong(entry.getValue().toString());
+                }
+                return numEntries;
             }
-
-            // Don't forget to close your scanner before returning the cardinality
-            bScanner.close();
-            return numEntries;
+            finally {
+                if (bScanner != null) {
+                    // Don't forget to close your scanner before returning the cardinalities
+                    bScanner.close();
+                }
+            }
         }
 
         /**
@@ -351,29 +396,35 @@ public class ColumnCardinalityCache
          * @param keys All keys to load
          * @return A mapping of Range to cardinality
          */
-        @SuppressWarnings("unchecked")
         @Override
         public Map<Range, Long> loadAll(Iterable<? extends Range> keys)
                 throws Exception
         {
-            LOG.debug("Loading %s exact ranges from Accumulo", ((Collection<Range>) keys).size());
+            @SuppressWarnings("unchecked")
+            Collection<Range> rangeKeys = (Collection<Range>) keys;
+            LOG.debug("Loading %s exact ranges from Accumulo", rangeKeys.size());
 
             // Create batch scanner for querying all ranges
             BatchScanner bScanner = conn.createBatchScanner(metricsTable, auths, 10);
-            bScanner.setRanges((Collection<Range>) keys);
-            bScanner.fetchColumn(columnFamily, Indexer.CARDINALITY_CQ_AS_TEXT);
+            try {
+                bScanner.setRanges(rangeKeys);
+                bScanner.fetchColumn(columnFamily, Indexer.CARDINALITY_CQ_AS_TEXT);
 
-            // Create a new map to hold our cardinalities for each range, returning a default of
-            // Zero for each non-existent Key
-            Map<Range, Long> rangeValues = new MapDefaultZero();
-            for (Entry<Key, Value> entry : bScanner) {
-                rangeValues.put(Range.exact(entry.getKey().getRow()),
-                        Long.parseLong(entry.getValue().toString()));
+                // Create a new map to hold our cardinalities for each range, returning a default of
+                // Zero for each non-existent Key
+                Map<Range, Long> rangeValues = new MapDefaultZero();
+                for (Entry<Key, Value> entry : bScanner) {
+                    rangeValues.put(Range.exact(entry.getKey().getRow()),
+                            Long.parseLong(entry.getValue().toString()));
+                }
+                return rangeValues;
             }
-
-            // Don't forget to close your scanner before returning the cardinalities
-            bScanner.close();
-            return rangeValues;
+            finally {
+                if (bScanner != null) {
+                    // Don't forget to close your scanner before returning the cardinalities
+                    bScanner.close();
+                }
+            }
         }
 
         /**

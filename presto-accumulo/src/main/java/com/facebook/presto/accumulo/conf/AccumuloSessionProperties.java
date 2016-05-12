@@ -45,6 +45,7 @@ public final class AccumuloSessionProperties
             "index_lowest_cardinality_threshold";
     private static final String INT_INDEX_METRICS_ENABLED = "index_metrics_enabled";
     private static final String INT_SCAN_USERNAME = "scan_username";
+    private static final String INT_INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH = "index_short_circuit_cardinality_fetch";
 
     public static final String OPTIMIZE_LOCALITY_ENABLED =
             "accumulo." + INT_OPTIMIZE_LOCALITY_ENABLED;
@@ -57,6 +58,7 @@ public final class AccumuloSessionProperties
             "accumulo." + INT_INDEX_LOWEST_CARDINALITY_THRESHOLD;
     public static final String INDEX_METRICS_ENABLED = "accumulo." + INT_INDEX_METRICS_ENABLED;
     public static final String SCAN_USERNAME = "accumulo." + INT_SCAN_USERNAME;
+    public static final String INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH = "accumulo." + INT_INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH;
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -96,8 +98,11 @@ public final class AccumuloSessionProperties
         PropertyMetadata<Boolean> s8 = booleanSessionProperty(INT_INDEX_METRICS_ENABLED,
                 "Set to true to enable usage of the metrics table to optimize usage of the index. "
                         + "Default true", true, false);
+        PropertyMetadata<Boolean> s9 = booleanSessionProperty(INT_INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH,
+                "Short circuit the retrieval of index metrics once any column is less than the lowest cardinality threshold."
+                        + "Default true", true, false);
 
-        sessionProperties = ImmutableList.of(s1, s2, s3, s4, s5, s6, s7, s8);
+        sessionProperties = ImmutableList.of(s1, s2, s3, s4, s5, s6, s7, s8, s9);
     }
 
     /**
@@ -205,5 +210,17 @@ public final class AccumuloSessionProperties
     public static String getScanUsername(ConnectorSession session)
     {
         return session.getProperty(INT_SCAN_USERNAME, String.class);
+    }
+
+    /**
+     * Gets a Boolean value indicating whether or not index metrics retrieval will be short circuited
+     * once any cardinality is below the threshold
+     *
+     * @param session The current session
+     * @return True if enabled, false otherwise
+     */
+    public static boolean isIndexShortCircuitEnabled(ConnectorSession session)
+    {
+        return session.getProperty(INT_INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH, Boolean.class);
     }
 }

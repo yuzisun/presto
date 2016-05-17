@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.facebook.presto.accumulo.AccumuloErrorCode.ACCUMULO_TABLE_EXISTS;
+import static com.facebook.presto.accumulo.AccumuloErrorCode.NOT_SUPPORTED;
 import static com.facebook.presto.accumulo.Types.checkType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
@@ -271,13 +272,12 @@ public class AccumuloMetadata
 
     private void rollbackInsert(ConnectorInsertTableHandle insertHandle)
     {
-        // TODO Rollback insert
         // Rollbacks for inserts are off the table when it comes to data in Accumulo.
         // When a batch of Mutations fails to be inserted, the general strategy
         // is to run the insert operation again until it is successful
         // Any mutations that were successfully written will be overwritten
         // with the same values, so that isn't a problem.
-        // How would we signal to the user that they need to insert their data again?
+        throw new PrestoException(NOT_SUPPORTED, "Unable to rollback insert. Some rows may have been written. Please run your insert again.");
     }
 
     /**

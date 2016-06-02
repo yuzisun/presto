@@ -48,13 +48,7 @@ public class TestAccumuloDistributedQueries
     public void testAddColumn()
             throws Exception
     {
-        try {
-            // TODO Adding columns via SQL are not supported until adding columns with comments are supported
-            super.testAddColumn();
-        }
-        catch (Exception e) {
-            assertEquals("Must have at least one non-row ID column", e.getMessage());
-        }
+        // Adding columns via SQL are not supported until adding columns with comments are supported
     }
 
     @Override
@@ -195,14 +189,7 @@ public class TestAccumuloDistributedQueries
     public void testDelete()
             throws Exception
     {
-        try {
-            // TODO Deletes are not supported by the connector
-            super.testDelete();
-        }
-        catch (Exception e) {
-            assertUpdate("DROP TABLE test_delete");
-            assertEquals("This connector does not support updates or deletes", e.getMessage());
-        }
+        // Deletes are not supported by the connector
     }
 
     @Override
@@ -247,8 +234,7 @@ public class TestAccumuloDistributedQueries
             throws Exception
     {
         // Override because base class error: Must have at least one non-row ID column
-        // Casting to BIGINT -- mvn test: integers... intellij: longs?  weird
-        assertUpdate("CREATE TABLE test_rename_column AS SELECT CAST(123 AS BIGINT) x, 456 a", 1);
+        assertUpdate("CREATE TABLE test_rename_column AS SELECT BIGINT '123' x, 456 a", 1);
 
         assertUpdate("ALTER TABLE test_rename_column RENAME COLUMN x TO y");
         MaterializedResult materializedRows = computeActual("SELECT y FROM test_rename_column");
@@ -296,25 +282,6 @@ public class TestAccumuloDistributedQueries
     }
 
     @Override
-    public void testTableSampleSystem()
-            throws Exception
-    {
-        // Override because base class error: ???
-        // TODO table sample system is not supported (I think?)
-        int total = computeActual("SELECT orderkey FROM orders").getMaterializedRows().size();
-
-        boolean sampleSizeFound = false;
-        for (int i = 0; i < 100; i++) {
-            int sampleSize = computeActual("SELECT orderkey FROM ORDERS TABLESAMPLE SYSTEM (50)").getMaterializedRows().size();
-            if (sampleSize > 0 && sampleSize < total) {
-                sampleSizeFound = true;
-                break;
-            }
-        }
-        //  assertTrue(sampleSizeFound, "Table sample returned unexpected number of rows");
-    }
-
-    @Override
     public void testBuildFilteredLeftJoin()
             throws Exception
     {
@@ -327,13 +294,12 @@ public class TestAccumuloDistributedQueries
     }
 
     @Override
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testJoinWithAlias()
             throws Exception
     {
         // Override because of extra UUID column in lineitem table, cannot SELECT *
         // Cannot munge test to pass due to aliased data set 'x' containing duplicate orderkey and comment columns
-        super.testJoinWithAlias();
     }
 
     @Override
@@ -349,13 +315,12 @@ public class TestAccumuloDistributedQueries
     }
 
     @Override
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testJoinWithDuplicateRelations()
             throws Exception
     {
         // Override because of extra UUID column in lineitem table, cannot SELECT *
         // Cannot munge test to pass due to aliased data sets 'x' containing duplicate orderkey and comment columns
-        super.testJoinWithDuplicateRelations();
     }
 
     @Override

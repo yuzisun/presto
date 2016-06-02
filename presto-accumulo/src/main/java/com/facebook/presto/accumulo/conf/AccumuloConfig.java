@@ -43,8 +43,8 @@ public class AccumuloConfig
     public static final String ZOOKEEPER_METADATA_ROOT = "zookeeper.metadata.root";
     public static final String METADATA_MANAGER_CLASS = "metadata.manager.class";
     public static final String CARDINALITY_CACHE_SIZE = "cardinality.cache.size";
-    public static final String CARDINALITY_CACHE_EXPIRE_SECONDS =
-            "cardinality.cache.expire.seconds";
+    public static final String CARDINALITY_CACHE_EXPIRE_DURATION =
+            "cardinality.cache.expire.duration";
     public static final String MINI_ACCUMULO_CLUSTER =
             "mini.accumulo.cluster";
 
@@ -175,7 +175,7 @@ public class AccumuloConfig
         return cardinalityCacheExpiration;
     }
 
-    @Config(CARDINALITY_CACHE_EXPIRE_SECONDS)
+    @Config(CARDINALITY_CACHE_EXPIRE_DURATION)
     @ConfigDescription("Sets the cardinality cache expiration")
     public void setCardinalityCacheExpiration(Duration cardinalityCacheExpiration)
     {
@@ -204,7 +204,7 @@ public class AccumuloConfig
         props.setThrowExceptionOnMissing(true);
 
         AccumuloConfig config = new AccumuloConfig();
-        config.setCardinalityCacheExpiration(Duration.valueOf(props.getString(CARDINALITY_CACHE_EXPIRE_SECONDS, "5m")));
+        config.setCardinalityCacheExpiration(Duration.valueOf(props.getString(CARDINALITY_CACHE_EXPIRE_DURATION, "5m")));
         config.setCardinalityCacheSize(props.getInt(CARDINALITY_CACHE_SIZE, 100_000));
         config.setInstance(props.getString(INSTANCE));
         config.setMetadataManagerClass(props.getString(METADATA_MANAGER_CLASS, "default"));
@@ -223,7 +223,7 @@ public class AccumuloConfig
         props.setThrowExceptionOnMissing(true);
 
         AccumuloConfig config = new AccumuloConfig();
-        config.setCardinalityCacheExpiration(Duration.valueOf(props.getString(CARDINALITY_CACHE_EXPIRE_SECONDS, "5m")));
+        config.setCardinalityCacheExpiration(Duration.valueOf(props.getString(CARDINALITY_CACHE_EXPIRE_DURATION, "5m")));
         config.setCardinalityCacheSize(props.getInt(CARDINALITY_CACHE_SIZE, 100_000));
         config.setInstance(props.getString(INSTANCE));
         config.setMetadataManagerClass(props.getString(METADATA_MANAGER_CLASS, "default"));

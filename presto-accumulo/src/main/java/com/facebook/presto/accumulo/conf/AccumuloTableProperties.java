@@ -45,7 +45,7 @@ import static java.lang.String.format;
  * <br>
  * <br>
  * CREATE TABLE foo (a VARCHAR, b INT)
- * WITH (column_mapping = 'b:md:b', internal = true);
+ * WITH (column_mapping = 'b:md:b', external = true);
  */
 public final class AccumuloTableProperties
 {
@@ -94,7 +94,7 @@ public final class AccumuloTableProperties
                 null, false);
 
         PropertyMetadata<String> s6 =
-                new PropertyMetadata<String>(SERIALIZER,
+                new PropertyMetadata<>(SERIALIZER,
                         "Serializer for Accumulo data encodings. Can either be 'default', "
                                 + "'string', 'lexicoder', or a Java class name. Default is 'default', i.e. "
                                 + "the value from AccumuloRowSerializer.getDefault(), i.e. 'lexicoder'.",

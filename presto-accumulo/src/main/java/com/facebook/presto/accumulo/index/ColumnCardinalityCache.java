@@ -120,7 +120,7 @@ public class ColumnCardinalityCache
 
         for (Entry<AccumuloColumnConstraint, Collection<Range>> e : idxConstraintRangePairs.asMap().entrySet()) {
             long card = getColumnCardinality(schema, table, e.getKey(), e.getValue());
-            LOG.debug("Cardinality for column %s is %d", e.getKey().getName(), card);
+            LOG.debug("Cardinality for column %s is %s", e.getKey().getName(), card);
             cardinalityToConstraints.put(card, e.getKey());
         }
 
@@ -283,7 +283,7 @@ public class ColumnCardinalityCache
         private LoadingCache<Range, Long> newCache(String schema, String table, String family,
                 String qualifier)
         {
-            LOG.debug("Created new cache for %s.%s, column %s:%s, size %d expiry %d", schema, table,
+            LOG.debug("Created new cache for %s.%s, column %s:%s, size %s expiry %s", schema, table,
                     family, qualifier, size, expireDuration);
             return CacheBuilder.newBuilder().maximumSize(size)
                     .expireAfterWrite(expireDuration.toMillis(), TimeUnit.MILLISECONDS)

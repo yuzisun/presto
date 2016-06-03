@@ -30,8 +30,10 @@ import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableMetadata;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Marker.Bound;
+import com.facebook.presto.spi.type.Type;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -1082,11 +1084,37 @@ public class AccumuloClient
         if (!dom.isPresent()) {
             return ImmutableSet.of(new Range());
         }
-
         ImmutableSet.Builder<Range> rangeBuilder = ImmutableSet.builder();
-        for (com.facebook.presto.spi.predicate.Range r : dom.get().getValues().getRanges()
-                .getOrderedRanges()) {
-            rangeBuilder.add(getRangeFromPrestoRange(r, serializer));
+
+        // If this domain is from an ANY clause
+        if (dom.get().getValues().isAny()) {
+            // Get the domain type
+            Type t = dom.get().getType();
+            if (Types.isArrayType(t)) {
+                // If it is an array type, then each value is in the domain is an array
+                for (Object arrayBlock : dom.get().getValues().getDiscreteValues().getValues()) {
+                    // Get the elements of the array block and add them to the ranges
+                    Type elementType = Types.getElementType(t);
+                    for (Object o : AccumuloRowSerializer.getArrayFromBlock(elementType,
+                            (Block) arrayBlock)) {
+                        // Find all locations like this and work on it
+                        rangeBuilder.add(new Range(new Text(serializer.encode(elementType, o))));
+                    }
+                }
+            }
+            else {
+                // If it is not an array type, then this is just a list of values
+                for (Object o : dom.get().getValues().getDiscreteValues().getValues()) {
+                    rangeBuilder.add(new Range(new Text(serializer.encode(t, o))));
+                }
+            }
+        }
+        else {
+            // This isn't an ANY clause, so convert the Presto Range to an Accumulo Range
+            for (com.facebook.presto.spi.predicate.Range r : dom.get().getValues().getRanges()
+                    .getOrderedRanges()) {
+                rangeBuilder.add(getRangeFromPrestoRange(r, serializer));
+            }
         }
 
         return rangeBuilder.build();

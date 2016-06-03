@@ -15,8 +15,10 @@ package com.facebook.presto.accumulo.conf;
 
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.session.PropertyMetadata;
+import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
+import io.airlift.units.Duration;
 
 import java.util.List;
 
@@ -46,6 +48,8 @@ public final class AccumuloSessionProperties
     private static final String INT_INDEX_METRICS_ENABLED = "index_metrics_enabled";
     private static final String INT_SCAN_USERNAME = "scan_username";
     private static final String INT_INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH = "index_short_circuit_cardinality_fetch";
+    private static final String INT_INDEX_CARDINALITY_CACHE_POLLING_DURATION =
+            "index_cardinality_cache_polling_duration";
 
     public static final String OPTIMIZE_LOCALITY_ENABLED =
             "accumulo." + INT_OPTIMIZE_LOCALITY_ENABLED;
@@ -59,6 +63,7 @@ public final class AccumuloSessionProperties
     public static final String INDEX_METRICS_ENABLED = "accumulo." + INT_INDEX_METRICS_ENABLED;
     public static final String SCAN_USERNAME = "accumulo." + INT_SCAN_USERNAME;
     public static final String INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH = "accumulo." + INT_INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH;
+    public static final String INDEX_CARDINALITY_CACHE_POLLING_DURATION = "accumulo." + INT_INDEX_CARDINALITY_CACHE_POLLING_DURATION;
 
     private final List<PropertyMetadata<?>> sessionProperties;
 
@@ -99,10 +104,18 @@ public final class AccumuloSessionProperties
                 "Set to true to enable usage of the metrics table to optimize usage of the index. "
                         + "Default true", true, false);
         PropertyMetadata<Boolean> s9 = booleanSessionProperty(INT_INDEX_SHORT_CIRCUIT_CARDINALITY_FETCH,
-                "Short circuit the retrieval of index metrics once any column is less than the lowest cardinality threshold."
+                "Short circuit the retrieval of index metrics once any column is less than the lowest cardinality threshold. "
                         + "Default true", true, false);
+        PropertyMetadata<String> s10 =
+                new PropertyMetadata<>(INT_INDEX_CARDINALITY_CACHE_POLLING_DURATION,
+                        "Sets the cardinality cache polling duration for short circuit retrieval of index metrics. Default 10ms",
+                        VarcharType.VARCHAR, String.class,
+                        "10ms",
+                        false,
+                        x -> Duration.valueOf(x.toString()).toString(),
+                        object -> object);
 
-        sessionProperties = ImmutableList.of(s1, s2, s3, s4, s5, s6, s7, s8, s9);
+        sessionProperties = ImmutableList.of(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10);
     }
 
     /**
@@ -188,6 +201,23 @@ public final class AccumuloSessionProperties
     public static double getIndexSmallCardThreshold(ConnectorSession session)
     {
         return session.getProperty(INT_INDEX_LOWEST_CARDINALITY_THRESHOLD, Double.class);
+    }
+
+    /**
+     * Gets the polling interval for the completion service that fetches cardinalities from Accumulo
+     * <br>
+     * The LoadingCache is not ordered and, as a result, some cached results (or a result retrieved
+     * from Accumulo in a short time) that have higher cardinalities are returned a few milliseconds
+     * before a significantly lower result. This parametmer controls the poll duration, adding 'waves
+     * of result retrieval from the LoadingCache. The results of any completed tasks are taken,
+     * and the smallest cardinality, if below the threshold, is used while the other tasks complete.
+     *
+     * @param session The current session
+     * @return The cardinality cache polling duration
+     */
+    public static Duration getIndexCardinalityCachePollingDuration(ConnectorSession session)
+    {
+        return Duration.valueOf(session.getProperty(INT_INDEX_CARDINALITY_CACHE_POLLING_DURATION, String.class));
     }
 
     /**

@@ -28,6 +28,15 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+/**
+ * Accumulo requires a unique identifier for the rows.  Any row that has a duplicate
+ * row ID is effectively an update, overwriting existing values of the row with
+ * whatever the new values are. For the lineitem and partsupp tables, there is no
+ * unique identifier, so a generated UUID is used in order to prevent overwriting
+ * rows of data. This is the same for any test cases that were creating tables
+ * with duplicate rows, so some test cases are overriden from the base class
+ * and slightly modified to add an additional UUID column.
+ */
 public class TestAccumuloDistributedQueries
         extends AbstractTestDistributedQueries
 {
@@ -228,6 +237,25 @@ public class TestAccumuloDistributedQueries
         assertUpdate("DROP TABLE test_insert");
     }
 
+    @Test
+    public void testInsertDuplicateRows()
+            throws Exception
+    {
+        // This test case tests the Accumulo connectors override capabilities
+        // When a row is inserted into a table where a row with the same row ID already exists,
+        // the cells of the existing row are overwritten with the new values
+        try {
+            assertUpdate("CREATE TABLE test_insert_duplicate AS SELECT 1 a, 2 b, '3' c", 1);
+            assertQuery("SELECT a, b, c FROM test_insert_duplicate", "SELECT 1, 2, '3'");
+            assertUpdate("INSERT INTO test_insert_duplicate (a, c) VALUES (1, '4')", 1);
+            assertUpdate("INSERT INTO test_insert_duplicate (a, b) VALUES (1, 3)", 1);
+            assertQuery("SELECT a, b, c FROM test_insert_duplicate", "SELECT 1, 3, '4'");
+        }
+        finally {
+            assertUpdate("DROP TABLE test_insert_duplicate");
+        }
+    }
+
     @Override
     public void testRenameColumn()
             throws Exception
@@ -268,16 +296,6 @@ public class TestAccumuloDistributedQueries
 
         assertFalse(queryRunner.tableExists(getSession(), "test_rename"));
         assertFalse(queryRunner.tableExists(getSession(), "test_rename_new"));
-    }
-
-    @Override
-    public void testSymbolAliasing()
-            throws Exception
-    {
-        // Override because base class error: Must specify column mapping property
-        assertUpdate("CREATE TABLE test_symbol_aliasing AS SELECT 1 foo_1, 2 foo_2_4", 1);
-        assertQuery("SELECT foo_1, foo_2_4 FROM test_symbol_aliasing", "SELECT 1, 2");
-        assertUpdate("DROP TABLE test_symbol_aliasing");
     }
 
     @Override

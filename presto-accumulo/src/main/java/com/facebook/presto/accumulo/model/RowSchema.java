@@ -50,7 +50,7 @@ public class RowSchema
      */
     public RowSchema addRowId(String name, Type type)
     {
-        columns.add(new AccumuloColumnHandle(name, null, null, type, columns.size(),
+        columns.add(new AccumuloColumnHandle(name, Optional.empty(), Optional.empty(), type, columns.size(),
                 "Accumulo row ID", false));
         return this;
     }

@@ -380,7 +380,7 @@ public class IndexLookup
             Collection<Range> rowIDRanges)
             throws TableNotFoundException, ExecutionException, InterruptedException
     {
-        final Set<Range> finalRanges = new HashSet<>();
+        Set<Range> finalRanges = new HashSet<>();
         // For each column/constraint pair we submit a task to scan the index ranges
         List<Callable<Set<Range>>> tasks = new ArrayList<>();
         for (Entry<AccumuloColumnConstraint, Collection<Range>> e : constraintRanges.asMap().entrySet()) {
